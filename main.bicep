@@ -23,6 +23,21 @@ param subnetName string = 'subnet1'
 @description('Name for the Network Security Group')
 param nsgName string = 'inboundNsg'
 
+@description('Name for the load balancer public IP')
+param loadBalancerPublicIPAddressName string = 'Standard'
+
+@description('SKU for the load balancer public IP')
+param loadBalancerPublicIPAddressSku string = 'lbPubIp'
+
+@description('Name for the load balancer')
+param pubLoadBalancerName string = 'publoadbalancer'
+
+@description('SKU for the load balancer')
+param pubLoadBalancerSkuName string = 'Basic'
+
+@description('Tier for the load balancer')
+param pubLoadBalancerTier string = 'Regional'
+
 //@description('The DSN name label')
 //param dnsNameLabel string = 'unificontainer'
 
@@ -80,6 +95,7 @@ resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2021-0
   }
 }
 
+@description('Virtual network with two subnets')
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   name: virtualNetworkName
   location: location
@@ -102,15 +118,18 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
               }
             }
           ]
+          networkSecurityGroup: {
+            id: nsg.id
+          }
         }
       }
       {
         name: pubSubnet
         properties: {
           addressPrefix: '10.2.1.0/24'
-          networkSecurityGroup: {
-            id: nsg.id
-          }
+          //networkSecurityGroup: {
+            //id: nsg.id
+          //}
         }
       }
     ]
@@ -160,12 +179,12 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
           sourceAddressPrefix: pubIp
           destinationAddressPrefix: 'VirtualNetwork'
           access: 'Allow'
-          priority: 120
+          priority: 100
           direction: 'Inbound'
         }
       }
      //COMMENT OUT Rules for Application Gateway as documented here: https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-faq
-      {
+      /*{
         name: 'Allow_GWM'
         properties: {
           protocol: '*'
@@ -190,12 +209,46 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
           priority: 110
           direction: 'Inbound'
         }
-      }
+      }*/
     ]
   }
 } // maybe not needed
 
-resource containergroup 'Microsoft.ContainerInstance/containerGroups@2020-11-01' = {
+resource loadBalancerPublicIPAddress 'Microsoft.Network/publicIPAddresses@2021-08-01' = {
+  name: loadBalancerPublicIPAddressName
+  location: location
+  sku: {
+    name: loadBalancerPublicIPAddressSku
+  }
+  properties: {
+    publicIPAddressVersion: 'IPv4'
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+resource publoadbalancer 'Microsoft.Network/loadBalancers@2022-01-01' = {
+  name: pubLoadBalancerName
+  location: location
+  sku: {
+    name: pubLoadBalancerSkuName
+    tier: pubLoadBalancerTier
+  }
+  properties: {
+    frontendIPConfigurations: [
+      {
+        name: 'LoadBalancerFrontEnd'
+        properties: {
+          publicIPAddress: {
+            id: loadBalancerPublicIPAddress.id
+          }
+          subnet: virtualNetwork.properties.subnets[1].id
+        }
+      }
+    ]
+  }
+}
+
+resource containergroup 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
   name: name
   location: location
   properties: {
@@ -279,5 +332,10 @@ resource containergroup 'Microsoft.ContainerInstance/containerGroups@2020-11-01'
     //networkProfile: {
       //id: containerGroupNetworkProfile.id
     //}
+    subnetIds: [
+      {
+        id: virtualNetwork.properties.subnets[0].id
+      }
+    ]
   }
 }
