@@ -5,8 +5,8 @@ param name string = 'unificontainergroup'
 param containerName string = 'unificontainer'
 
 @description('Name for the image')
-param imageName string = 'lscr.io/linuxserver/unifi-controller:latest'
-//param imageName string = 'docker.io/jacobalberty/unifi:latest'
+//param imageName string = 'lscr.io/linuxserver/unifi-controller:latest'
+param imageName string = 'docker.io/jacobalberty/unifi:latest'
 
 @description('Name for the data volume')
 param volumeName string = 'volume1'
@@ -14,8 +14,8 @@ param volumeName string = 'volume1'
 @description('Name for the virtual network')
 param virtualNetworkName string = 'vnet1'
 
-@description('Name for the container network profile')
-param containerGroupNetworkProfileName string = 'containerNetworkProfile'
+//@description('Name for the container network profile')
+//param containerGroupNetworkProfileName string = 'containerNetworkProfile'
 
 @description('Name for the virtual network subnet')
 param subnetName string = 'subnet1'
@@ -46,8 +46,8 @@ param memoryInGb int = 1
 @description('Location for all resources.')
 param location string = resourceGroup().location
 
-//@description('On-prem public IP to use in NSG, required')
-//param pubIp string
+@description('On-prem public IP to use in NSG, required')
+param pubIp string
 
 @description('Storage account name')
 var storageAccountName = 'data${uniqueString(resourceGroup().id)}'
@@ -80,7 +80,7 @@ resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2021-0
   }
 }
 
-/*resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   name: virtualNetworkName
   location: location
   properties: {
@@ -117,7 +117,7 @@ resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2021-0
   }
 }
 
-resource containerGroupNetworkProfile 'Microsoft.Network/networkProfiles@2021-02-01' = {
+/*resource containerGroupNetworkProfile 'Microsoft.Network/networkProfiles@2021-02-01' = {
   name: containerGroupNetworkProfileName
   location: location
   properties: {
@@ -141,7 +141,7 @@ resource containerGroupNetworkProfile 'Microsoft.Network/networkProfiles@2021-02
   }
 }*/
 
-/*resource nsg 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
+resource nsg 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
   name: nsgName
   location: location
   properties: {
@@ -164,7 +164,7 @@ resource containerGroupNetworkProfile 'Microsoft.Network/networkProfiles@2021-02
           direction: 'Inbound'
         }
       }
-     COMMENT OUT Rules for Application Gateway as documented here: https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-faq
+     //COMMENT OUT Rules for Application Gateway as documented here: https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-faq
       {
         name: 'Allow_GWM'
         properties: {
@@ -193,7 +193,7 @@ resource containerGroupNetworkProfile 'Microsoft.Network/networkProfiles@2021-02
       }
     ]
   }
-}*/
+} // maybe not needed
 
 resource containergroup 'Microsoft.ContainerInstance/containerGroups@2020-11-01' = {
   name: name
@@ -240,8 +240,8 @@ resource containergroup 'Microsoft.ContainerInstance/containerGroups@2020-11-01'
     ]
     osType: 'Linux'
     ipAddress: {
-      type: 'Public'
-      //type: 'Private'
+      //type: 'Public'
+      type: 'Private'
       //dnsNameLabel: dnsNameLabel
       ports: [
         {
@@ -278,8 +278,6 @@ resource containergroup 'Microsoft.ContainerInstance/containerGroups@2020-11-01'
     ]
     //networkProfile: {
       //id: containerGroupNetworkProfile.id
-    }
+    //}
   }
-//}
-
-
+}
